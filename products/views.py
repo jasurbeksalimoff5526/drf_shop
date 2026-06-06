@@ -1,19 +1,22 @@
-from django.shortcuts import render, get_object_or_404
-from .models import Product, Category, CartItem, Cart
-from rest_framework.exceptions import ValidationError
+from django.shortcuts import  get_object_or_404
+from .models import Product, Category
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from .serializer import CategorySerializer, ProductSerializer, CartItemSerializer, CartSerializer
-from .permissions import IsAdmin, IsSellerOrAdmin, IsOwnerOrAdminOrReadOnly, IsSeller
-from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework.generics import RetrieveAPIView, CreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.permissions import AllowAny
+from .serializer import CategorySerializer, ProductSerializer
+from shared.permissions import IsAdmin, IsSellerOrAdmin, IsOwnerOrAdminOrReadOnly, IsSeller
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from rest_framework.generics import RetrieveUpdateDestroyAPIView
 
 
-class CategoryListAPIView(APIView):
+from rest_framework.generics import ListCreateAPIView
+
+class CategoryListAPIView(ListCreateAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+
     def get_permissions(self):
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return [IsAdmin()]
         return [AllowAny()]
 
@@ -30,41 +33,30 @@ class CategoryListAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class CategoryDetailAPIView(APIView):
+class CategoryDetailAPIView(RetrieveUpdateDestroyAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    lookup_field = "slug"
+
     def get_permissions(self):
-        if self.request.method in ['PUT', 'PATCH', 'DELETE']:
+        if self.request.method in ["PUT", "PATCH", "DELETE"]:
             return [IsAdmin()]
         return [AllowAny()]
 
-    def get(self, request, slug):
-        category = get_object_or_404(Category, slug=slug)
-        serializer = CategorySerializer(category)
-        return Response(serializer.data)
-
-    def put(self, request, slug):
-        category = get_object_or_404(Category, slug=slug)
-        serializer = CategorySerializer(category, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, slug):
-        category = get_object_or_404(Category, slug=slug)
-        category.delete()
-        return Response(
-            {"message": "Kategoriya muvaffaqiyatli o'chirildi."},
-            status=status.HTTP_204_NO_CONTENT
-        )
 
 
-class ProductListAPIView(APIView):
-    parser_classes = [MultiPartParser, FormParser]
+class ProductListAPIView(ListCreateAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_permissions(self):
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return [IsSeller()]
         return [AllowAny()]
+
+    def perform_create(self, serializer):
+        serializer.save(seller=self.request.user)
 
     def get(self, request):
         products = Product.objects.all()
@@ -79,57 +71,13 @@ class ProductListAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class ProductDetailAPIView(APIView):
-    parser_classes = [MultiPartParser, FormParser]
+class ProductDetailAPIView(RetrieveUpdateDestroyAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    lookup_field = "slug"
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
     permission_classes = [IsOwnerOrAdminOrReadOnly]
 
-    def get_object(self, slug):
-        product = get_object_or_404(Product, slug=slug)
-        self.check_object_permissions(self.request, product)
-        return product
-
-    def get(self, request, slug):
-        product = self.get_object(slug)
-        serializer = ProductSerializer(product)
-        return Response(serializer.data)
-
-    def put(self, request, slug):
-        product = self.get_object(slug)
-        serializer = ProductSerializer(product, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, slug):
-        product = self.get_object(slug)
-        product.delete()
-        return Response(
-            {"message": "Mahsulot muvaffaqiyatli o'chirildi."},
-            status=status.HTTP_204_NO_CONTENT
-        )
-
-
-class CartDetailView(RetrieveAPIView):
-    serializer_class = CartSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_object(self):
-        cart, created = Cart.objects.get_or_create(user=self.request.user)
-        return cart
-
-
-class CartItemCreateView(CreateAPIView):
-    serializer_class = CartItemSerializer
-    permission_classes = [IsAuthenticated]
-
-
-class CartItemDetailView(RetrieveUpdateDestroyAPIView):
-    serializer_class = CartItemSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        return CartItem.objects.filter(cart__user=self.request.user)
 
 
 

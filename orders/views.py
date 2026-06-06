@@ -1,12 +1,40 @@
-from rest_framework.generics import ListCreateAPIView, RetrieveAPIView, DestroyAPIView
+from rest_framework.generics import ListCreateAPIView, RetrieveAPIView, CreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 from .models import Order, OrderItem, Wishlist
-from products.models import Cart, Product
-from .seralizer import OrderSerializer, WishlistSerializer
+from .models import Cart, Product, CartItem
+from .seralizer import OrderSerializer, WishlistSerializer, CartSerializer, CartItemSerializer
 from rest_framework.views import APIView
+
+
+class CartDetailView(RetrieveAPIView):
+    serializer_class = CartSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        cart, _ = Cart.objects.get_or_create(user=self.request.user)
+        return cart
+
+
+class CartItemCreateView(CreateAPIView):
+    serializer_class = CartItemSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        cart, _ = Cart.objects.get_or_create(user=self.request.user)
+        serializer.save(cart=cart)
+
+class CartItemDetailView(RetrieveUpdateDestroyAPIView):
+    serializer_class = CartItemSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return CartItem.objects.filter(
+            cart__user=self.request.user
+        )
+
 
 
 class OrderListCreateGenericView(ListCreateAPIView):
@@ -23,7 +51,7 @@ class OrderListCreateGenericView(ListCreateAPIView):
 
         if not cart_items.exists():
             return Response(
-                {"error": "Savatingiz bo'sh! Buyurtma berish uchun mahsulot qo'shing."},
+                {"error": "Buyurtma berishdan avval mahsulot qo'shing."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -45,12 +73,13 @@ class OrderListCreateGenericView(ListCreateAPIView):
         return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
 
 
+from shared.permissions import IsOwnerOrAdmin
+
 class OrderDetailGenericView(RetrieveAPIView):
     serializer_class = OrderSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOwnerOrAdmin]
 
-    def get_queryset(self):
-        return Order.objects.filter(user=self.request.user)
+    queryset = Order.objects.all()
 
 
 class WishlistGenericView(RetrieveAPIView):
@@ -71,12 +100,8 @@ class WishlistToggleAPIView(APIView):
 
         if product in wishlist.products.all():
             wishlist.products.remove(product)
-            return Response({"message": "Mahsulot sevimlilardan olib tashlandi"}, status=status.HTTP_200_OK)
+            return Response({"message": "Wishlistdan olib tashlandi"}, status=status.HTTP_200_OK)
         else:
             wishlist.products.add(product)
-            return Response({"message": "Mahsulot sevimlilarga qo'shildi"}, status=status.HTTP_201_CREATED)
+            return Response({"message": "Wishlistga qo'shildi"}, status=status.HTTP_201_CREATED)
 
-
-from django.shortcuts import render
-
-# Create your views here.

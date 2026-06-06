@@ -1,5 +1,4 @@
 from rest_framework_simplejwt.tokens import RefreshToken
-
 from .models import VIA_EMAIL, VIA_PHONE, SELLER, ORDINARY_USER, NEW, CODE_VERIFY, CHANGE_INFO, DONE
 from rest_framework.generics import CreateAPIView
 from rest_framework import permissions, status
@@ -12,7 +11,7 @@ from .serializer import (
     ChangePasswordSerializer,
     ForgotPasswordSerializer,
     LoginSerializer,
-    # ProfileSerializer,
+    ProfileSerializer,
     ProfileUpdateSerializer,
     ResetPasswordSerializer,
     SignUpSerializer,
@@ -21,8 +20,6 @@ from .serializer import (
     ChangeProfileInfoSerializer, ProfileSerializer
 )
 
-
-# Create your views here.
 
 
 class SignUpView(CreateAPIView):
@@ -33,9 +30,10 @@ class SignUpView(CreateAPIView):
 
 class VerifyCodeView(APIView):
     permission_classes = [permissions.AllowAny]
+    serializer_class = VerifyCodeSerializer
 
     def post(self, request, *args, **kwargs):
-        serializer = VerifyCodeSerializer(data=request.data)
+        serializer = VerifyCodeSerializer(data=request.data )
 
         if serializer.is_valid():
             user = serializer.validated_data["user"]
@@ -60,6 +58,7 @@ class VerifyCodeView(APIView):
 
 class GetNewCodeView(APIView):
     permission_classes = [permissions.AllowAny]
+    serializer_class = ResendCodeSerializer
 
     def post(self, request, *args, **kwargs):
         serializer = ResendCodeSerializer(data=request.data)
@@ -82,10 +81,11 @@ class GetNewCodeView(APIView):
 
 
 class ChangeProfileInfoView(APIView):
+    serializer_class = ChangeProfileInfoSerializer
 
     def put(self, request, *args, **kwargs):
         user = request.user
-        serializer = ChangeProfileInfoSerializer(instance=user, data=request.data, partial=True)
+        serializer = ChangeProfileInfoSerializer(instance=user, data=request.data, partial=True, context={"request": request})
 
         if user.auth_status in [CHANGE_INFO, DONE]:
             return Response({"message": "Siz bu qismdan o'tib bo'lgansiz"}, status=status.HTTP_400_BAD_REQUEST)
@@ -106,6 +106,7 @@ class ChangeProfileInfoView(APIView):
 
 class UploadProfilePhotoView(APIView):
     parser_classes = [MultiPartParser, FormParser]
+    serializer_class = ProfileUpdateSerializer
 
     def put(self, request, *args, **kwargs):
         user = request.user
@@ -124,6 +125,7 @@ class UploadProfilePhotoView(APIView):
 
 
 class ProfileView(APIView):
+    serializer_class = ProfileSerializer
 
     def get(self, request, *args, **kwargs):
         serializer = ProfileSerializer(request.user)
@@ -132,6 +134,7 @@ class ProfileView(APIView):
 
 class ProfileUpdateView(APIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
+    serializer_class = ProfileUpdateSerializer
 
     def put(self, request, *args, **kwargs):
         serializer = ProfileUpdateSerializer(instance=request.user, data=request.data, partial=True)
@@ -143,6 +146,7 @@ class ProfileUpdateView(APIView):
 
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
+    serializer_class = LoginSerializer
 
     def post(self, request, *args, **kwargs):
         serializer = LoginSerializer(data=request.data)
@@ -173,6 +177,7 @@ class LogoutView(APIView):
 
 class ForgotPasswordView(APIView):
     permission_classes = [permissions.AllowAny]
+    serializer_class = ForgotPasswordSerializer
 
     def post(self, request, *args, **kwargs):
         serializer = ForgotPasswordSerializer(data=request.data)
@@ -197,6 +202,7 @@ class ForgotPasswordView(APIView):
 
 class ResetPasswordView(APIView):
     permission_classes = [permissions.AllowAny]
+    serializer_class = ResetPasswordSerializer
 
     def post(self, request, *args, **kwargs):
         serializer = ResetPasswordSerializer(data=request.data)
@@ -218,6 +224,7 @@ class ResetPasswordView(APIView):
 
 
 class ChangePasswordView(APIView):
+    serializer_class = ChangePasswordSerializer
 
     def post(self, request, *args, **kwargs):
         serializer = ChangePasswordSerializer(data=request.data, context={"request": request})

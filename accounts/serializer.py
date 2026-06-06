@@ -212,14 +212,21 @@ class LoginSerializer(serializers.Serializer):
     def validate(self, attrs):
         user_input = attrs.get("email_or_phone", "")
         password = attrs.get("password", "")
+
         field_type, cleaned_value = check_email_or_phone(user_input)
 
         if field_type == "email":
             user = CustomUser.objects.filter(email=cleaned_value).first()
-        else:
+
+        elif field_type == "phone":
             user = CustomUser.objects.filter(phone_number=cleaned_value).first()
+
+        else:  # username
+            user = CustomUser.objects.filter(username=cleaned_value).first()
+
         if not user or not user.check_password(password):
-            raise ValidationError({"message": "login yoki parol noto'g'ri"})
+            raise ValidationError({"message": "Login yoki parol noto'g'ri"})
+
         if user.auth_status != DONE:
             raise ValidationError({"message": "Hisob to'liq faollashtirilmagan"})
 

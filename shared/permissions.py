@@ -45,8 +45,14 @@ class IsOwnerOrAdminOrReadOnly(BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.method in SAFE_METHODS:
             return True
+
         if not request.user or not request.user.is_authenticated:
             return False
+
         if request.user.is_staff or request.user.user_role == ADMIN:
             return True
-        return getattr(obj, "user", None) == request.user
+
+        return (
+            getattr(obj, "user", None) == request.user
+            or getattr(obj, "seller", None) == request.user
+        )
