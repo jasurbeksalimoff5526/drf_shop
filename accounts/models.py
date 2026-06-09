@@ -63,7 +63,7 @@ class CustomUser(AbstractUser, BaseModel):
             'refresh': str(refresh)
         }
     
-    
+
     
     def check_username(self):
         if not self.username:

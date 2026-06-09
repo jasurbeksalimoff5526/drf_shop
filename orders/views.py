@@ -11,7 +11,6 @@ from rest_framework.views import APIView
 
 class CartDetailView(RetrieveAPIView):
     serializer_class = CartSerializer
-    permission_classes = [IsAuthenticated]
 
     def get_object(self):
         cart, _ = Cart.objects.get_or_create(user=self.request.user)
@@ -20,7 +19,6 @@ class CartDetailView(RetrieveAPIView):
 
 class CartItemCreateView(CreateAPIView):
     serializer_class = CartItemSerializer
-    permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
         cart, _ = Cart.objects.get_or_create(user=self.request.user)
@@ -28,7 +26,7 @@ class CartItemCreateView(CreateAPIView):
 
 class CartItemDetailView(RetrieveUpdateDestroyAPIView):
     serializer_class = CartItemSerializer
-    permission_classes = [IsAuthenticated]
+
 
     def get_queryset(self):
         return CartItem.objects.filter(
@@ -39,7 +37,6 @@ class CartItemDetailView(RetrieveUpdateDestroyAPIView):
 
 class OrderListCreateGenericView(ListCreateAPIView):
     serializer_class = OrderSerializer
-    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         return Order.objects.filter(user=self.request.user).order_by('-created_at')

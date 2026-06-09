@@ -6,12 +6,11 @@ from rest_framework.permissions import AllowAny
 from .serializer import CategorySerializer, ProductSerializer
 from shared.permissions import IsAdmin, IsSellerOrAdmin, IsOwnerOrAdminOrReadOnly, IsSeller
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from rest_framework.generics import RetrieveUpdateDestroyAPIView
-
+from rest_framework.generics import RetrieveUpdateDestroyAPIView, GenericAPIView
 
 from rest_framework.generics import ListCreateAPIView
 
-class CategoryListAPIView(ListCreateAPIView):
+class CategoryListAPIView(GenericAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
@@ -45,7 +44,7 @@ class CategoryDetailAPIView(RetrieveUpdateDestroyAPIView):
 
 
 
-class ProductListAPIView(ListCreateAPIView):
+class ProductListAPIView(GenericAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     parser_classes = [MultiPartParser, FormParser, JSONParser]

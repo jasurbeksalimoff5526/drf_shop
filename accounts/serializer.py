@@ -129,11 +129,12 @@ class ChangeProfileInfoSerializer(serializers.ModelSerializer):
     username = serializers.CharField(required=True, max_length=100)
     first_name = serializers.CharField(required=True, max_length=100)
     last_name = serializers.CharField(required=True, max_length=100)
-    user_role = serializers.CharField(required=True, max_length=100)
+    user_role = serializers.CharField(max_length=100, read_only=True)
 
     class Meta:
         model = CustomUser
         fields = ["username", "first_name", "last_name", "password", "confirm_password", "user_role"]
+        read_only_fields = ["user_role"]
 
     def validate(self, attrs):
         if attrs["password"] != attrs["confirm_password"]:
@@ -156,7 +157,6 @@ class ChangeProfileInfoSerializer(serializers.ModelSerializer):
         instance.username = validated_data.get("username", instance.username)
         instance.first_name = validated_data.get("first_name", instance.first_name)
         instance.last_name = validated_data.get("last_name", instance.last_name)
-        instance.user_role = validated_data.get("user_role", instance.user_role)
 
         if password:
             instance.set_password(password)
